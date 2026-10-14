@@ -1,0 +1,51 @@
+# Hashtopolis server stack for the TSTC cracking lab.
+#
+# NOTE: Hashtopolis has changed its Docker packaging between releases (the
+# classic single `hashtopolis/server` image vs. a newer split frontend/backend).
+# Before the live run, cross-check image names and env var names against the
+# compose file in the current upstream repo:
+#   https://github.com/hashtopolis/server
+#
+# Copy .env.example to .env and fill in real values before `docker compose up`.
+
+services:
+  db:
+    image: mariadb:10.11
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${DB_NAME}
+      MARIADB_USER: ${DB_USER}
+      MARIADB_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  server:
+    image: hashtopolis/server:latest
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      # Host 8080 -> container 80. This is the URL agents and the UI use.
+      - "8080:80"
+    environment:
+      HASHTOPOLIS_DB_HOST: db
+      HASHTOPOLIS_DB_DATABASE: ${DB_NAME}
+      HASHTOPOLIS_DB_USER: ${DB_USER}
+      HASHTOPOLIS_DB_PASS: ${DB_PASSWORD}
+      HASHTOPOLIS_ADMIN_USER: ${HASHTOPOLIS_ADMIN_USER}
+      HASHTOPOLIS_ADMIN_PASSWORD: ${HASHTOPOLIS_ADMIN_PASSWORD}
+    volumes:
+      - import:/var/www/html/import
+      - files:/var/www/html/files
+
+volumes:
+  db_data:
+  import:
+  files:

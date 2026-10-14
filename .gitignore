@@ -1,0 +1,17 @@
+# Secrets
+.env
+
+# Don't commit cracking material or results
+*.hash
+*.hashlist
+hashlists/
+wordlists/
+rules/
+cracked/
+potfiles/
+*.potfile
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+*.swp
